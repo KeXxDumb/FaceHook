@@ -105,4 +105,25 @@ object FacebookPoller {
         }
 
     fun hasAuthCookie(cookieString: String) = Regex("(^|;\\s*)c_user=").containsMatchIn(cookieString)
+
+    // Pide el nombre real de la cuenta a Facebook, para no tener que
+    // preguntárselo al usuario manualmente.
+    fun fetchDisplayName(cookieString: String): String? {
+        val conn = URL("https://m.facebook.com/me").openConnection() as HttpURLConnection
+        conn.setRequestProperty("Cookie", cookieString)
+        conn.setRequestProperty("User-Agent", USER_AGENT)
+        conn.instanceFollowRedirects = true
+        conn.connectTimeout = 15000
+        conn.readTimeout = 15000
+        try {
+            if (conn.responseCode !in 200..299) return null
+            val html = conn.inputStream.bufferedReader().use { it.readText() }
+            val titleMatch = Regex("<title>(.*?)</title>", RegexOption.IGNORE_CASE).find(html) ?: return null
+            var name = decodeHtml(titleMatch.groupValues[1]).trim()
+            name = name.removeSuffix(" | Facebook").removeSuffix(" - Facebook").trim()
+            return name.ifBlank { null }
+        } finally {
+            conn.disconnect()
+        }
+    }
 }

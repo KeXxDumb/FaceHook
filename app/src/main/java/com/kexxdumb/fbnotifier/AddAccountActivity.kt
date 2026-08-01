@@ -6,9 +6,6 @@ import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +19,6 @@ private const val FB_URL = "https://m.facebook.com"
 class AddAccountActivity : AppCompatActivity() {
 
     private var handledLogin = false
-    private var pendingCookie: String? = null
     private val scope = CoroutineScope(Dispatchers.Main)
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -35,9 +31,9 @@ class AddAccountActivity : AppCompatActivity() {
         val cookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null)
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(findViewById(R.id.webView), true)
 
         val webView = findViewById<WebView>(R.id.webView)
+        cookieManager.setAcceptThirdPartyCookies(webView, true)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
 
@@ -48,10 +44,6 @@ class AddAccountActivity : AppCompatActivity() {
             }
         }
         webView.loadUrl(LOGIN_URL)
-
-        findViewById<TextView>(R.id.saveAccountButton).setOnClickListener {
-            confirmAddAccount()
-        }
     }
 
     // Solo acepta el login cuando la cookie real de sesión (c_user) está
@@ -63,33 +55,40 @@ class AddAccountActivity : AppCompatActivity() {
         if (!FacebookPoller.hasAuthCookie(cookieString)) return
 
         handledLogin = true
-        pendingCookie = cookieString
-        findViewById<View>(R.id.namePromptOverlay).visibility = View.VISIBLE
+        findViewById<View>(R.id.savingOverlay).visibility = View.VISIBLE
+        saveAccount(cookieString)
     }
 
-    private fun confirmAddAccount() {
-        val cookieString = pendingCookie ?: return
-        val label = findViewById<EditText>(R.id.labelInput).text.toString()
-
-        val profile = try {
-            ProfileStore.add(this, label, cookieString)
-        } catch (e: Exception) {
-            Toast.makeText(this, "No se pudo guardar la cuenta, intenta de nuevo.", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        // Cerrar de inmediato: guardar es local y ya está hecho. El "seed"
-        // es solo para no recibir notificaciones viejas de golpe, así que
-        // si falla (red, bloqueo, etc.) no debe bloquear nada.
-        finish()
-
+    private fun saveAccount(cookieString: String) {
         scope.launch {
+            val name = withContext(Dispatchers.IO) {
+                try {
+                    FacebookPoller.fetchDisplayName(cookieString)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+
+            val profile = try {
+                ProfileStore.add(this@AddAccountActivity, name ?: "", cookieString)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@AddAccountActivity,
+                    "No se pudo guardar la cuenta, intenta de nuevo.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                finish()
+                return@launch
+            }
+
+            finish()
+
             withContext(Dispatchers.IO) {
                 try {
                     val counts = FacebookPoller.fetchCounts(profile.cookieString)
                     ProfileStore.setCounts(applicationContext, profile.id, counts)
                 } catch (_: Exception) {
-                    // sin red o bloqueado: no pasa nada, el próximo poll periódico lo intentará de nuevo
+                    // sin red o bloqueado: el próximo poll periódico lo intentará de nuevo
                 }
             }
         }

@@ -62,6 +62,11 @@ class MainActivity : AppCompatActivity() {
         profiles.forEach { profile ->
             val row = inflater.inflate(R.layout.item_profile, container, false)
             row.findViewById<TextView>(R.id.profileLabel).text = profile.label
+            row.setOnClickListener {
+                val intent = Intent(this, ViewAccountActivity::class.java)
+                intent.putExtra(EXTRA_PROFILE_ID, profile.id)
+                startActivity(intent)
+            }
             row.setOnLongClickListener {
                 confirmRemove(profile)
                 true

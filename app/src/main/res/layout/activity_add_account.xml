@@ -9,51 +9,24 @@
         android:layout_height="match_parent" />
 
     <LinearLayout
-        android:id="@+id/namePromptOverlay"
+        android:id="@+id/savingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/white"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:visibility="gone">
 
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:text="@string/session_detected"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"
-            android:text="@string/name_prompt"
-            android:textColor="@color/hint_gray" />
-
-        <EditText
-            android:id="@+id/labelInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/name_hint"
-            android:padding="12dp"
-            android:background="@android:drawable/edit_text"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/saveAccountButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/fb_blue"
-            android:gravity="center"
-            android:padding="14dp"
-            android:text="@string/save_account"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:clickable="true"
-            android:focusable="true" />
+            android:textSize="16sp" />
     </LinearLayout>
 
 </FrameLayout>
