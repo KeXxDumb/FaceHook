@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">FB Notifier</string>
+    <string name="add_account">Agregar cuenta</string>
+    <string name="add_account_button">+ Agregar cuenta</string>
+    <string name="accounts_title">Cuentas de Facebook</string>
+    <string name="empty_accounts">Aún no agregas ninguna cuenta.</string>
+    <string name="long_press_hint">mantén presionado para quitar</string>
+    <string name="session_detected">Sesión detectada</string>
+    <string name="name_prompt">¿Cómo quieres llamar a esta cuenta?</string>
+    <string name="name_hint">Ej. Personal, Trabajo, Tienda…</string>
+    <string name="save_account">Guardar cuenta</string>
+    <string name="notification_channel_name">Facebook</string>
+</resources>

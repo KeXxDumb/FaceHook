@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fb_blue">#1877F2</color>
+    <color name="hint_gray">#888888</color>
+    <color name="row_bg">#F2F3F5</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="accounts_title">Cuentas de Facebook</string>
+    <string name="add_account">Agregar cuenta</string>
+    <string name="add_account_button">+ Agregar cuenta</string>
+    <string name="app_name">FB Notifier</string>
+    <string name="empty_accounts">Aún no agregas ninguna cuenta.</string>
+    <string name="long_press_hint">mantén presionado para quitar</string>
+    <string name="name_hint">Ej. Personal, Trabajo, Tienda…</string>
+    <string name="name_prompt">¿Cómo quieres llamar a esta cuenta?</string>
+    <string name="notification_channel_name">Facebook</string>
+    <string name="save_account">Guardar cuenta</string>
+    <string name="session_detected">Sesión detectada</string>
+    <style name="Theme.FBNotifier" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/fb_blue</item>
+        <item name="colorPrimaryDark">@color/fb_blue</item>
+        <item name="android:statusBarColor">@color/fb_blue</item>
+    </style>
+</resources>

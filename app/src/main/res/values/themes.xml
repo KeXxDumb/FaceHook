@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.FBNotifier" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/fb_blue</item>
+        <item name="colorPrimaryDark">@color/fb_blue</item>
+        <item name="android:statusBarColor">@color/fb_blue</item>
+    </style>
+</resources>
