@@ -10,7 +10,25 @@ compilados para Linux con glibc, y Termux usa Bionic (el libc de Android),
 así que no corren directo en Termux. La solución estándar es un chroot de
 Ubuntu dentro de Termux vía `proot-distro`.
 
-## Setup (una sola vez)
+## Compilar vía GitHub Actions (recomendado, evita todo el lío de proot)
+
+Los runners de GitHub Actions ya traen Ubuntu con JDK y Android SDK
+preinstalados — nada de `proot-distro`, nada de AAPT2 fallando.
+
+1. Sube esta carpeta completa a un repositorio de GitHub (puede ser privado).
+2. Ve a la pestaña **Actions** del repo → workflow "Build APK nativo (Kotlin)" → **Run workflow**.
+3. Cuando termine (unos minutos), entra al run y baja hasta **Artifacts** →
+   descarga `fb-notifier-apk` (es un .zip que contiene el `.apk` de debug,
+   ya autofirmado, listo para instalar).
+4. Pásalo a tu teléfono e instálalo (activa "orígenes desconocidos" si lo pide).
+
+No necesitas ningún secret/token para esto — a diferencia del proyecto
+Expo, aquí no depende de una cuenta externa.
+
+## Setup (una sola vez) — build local vía Termux + proot-distro
+Alternativa si prefieres compilar en el propio teléfono sin depender de
+GitHub. Nota: tiene problemas conocidos con AAPT2 bajo `proot` en algunos
+entornos; si te trabas ahí, usa la opción de GitHub Actions de arriba.
 
 ```bash
 pkg update && pkg upgrade -y
