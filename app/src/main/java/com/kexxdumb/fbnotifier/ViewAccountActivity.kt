@@ -26,21 +26,23 @@ class ViewAccountActivity : AppCompatActivity() {
         }
 
         val cookieManager = CookieManager.getInstance()
-        // Limpia cualquier sesión anterior (de otra cuenta que hayas visto
-        // antes) e inyecta las cookies guardadas de esta cuenta específica.
-        cookieManager.removeAllCookies(null)
-        profile.cookieString.split(";").forEach { pair ->
-            val trimmed = pair.trim()
-            if (trimmed.isNotEmpty()) {
-                cookieManager.setCookie(FB_URL, trimmed)
-            }
-        }
-        cookieManager.flush()
-
         val webView = findViewById<WebView>(R.id.webView)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
-        webView.loadUrl(FB_URL)
+
+        // Limpia cualquier sesión anterior (de otra cuenta que hayas visto
+        // antes) de forma síncrona antes de cargar, e inyecta las cookies
+        // guardadas de esta cuenta específica.
+        cookieManager.removeAllCookies { _ ->
+            profile.cookieString.split(";").forEach { pair ->
+                val trimmed = pair.trim()
+                if (trimmed.isNotEmpty()) {
+                    cookieManager.setCookie(FB_URL, trimmed)
+                }
+            }
+            cookieManager.flush()
+            webView.loadUrl(FB_URL)
+        }
     }
 
     override fun onBackPressed() {

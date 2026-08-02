@@ -29,6 +29,20 @@
     </ScrollView>
 
     <TextView
+        android:id="@+id/checkNowButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/row_bg"
+        android:gravity="center"
+        android:padding="14dp"
+        android:text="@string/check_now_button"
+        android:textColor="@android:color/black"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <TextView
         android:id="@+id/addAccountButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -1,7 +1,12 @@
 <resources>
-    <string name="app_name">FB Notifier</string>
+    <string name="app_name">FaceHook</string>
     <string name="add_account">Agregar cuenta</string>
     <string name="add_account_button">+ Agregar cuenta</string>
+    <string name="check_now_button">Revisar ahora</string>
+    <string name="checking">Revisando…</string>
+    <string name="check_done_new">%1$d notificación(es) nueva(s)</string>
+    <string name="check_done_none">Sin novedades</string>
+    <string name="check_done_error">Error al revisar (¿sin red?)</string>
     <string name="accounts_title">Cuentas de Facebook</string>
     <string name="empty_accounts">Aún no agregas ninguna cuenta.</string>
     <string name="long_press_hint">mantén presionado para quitar</string>
