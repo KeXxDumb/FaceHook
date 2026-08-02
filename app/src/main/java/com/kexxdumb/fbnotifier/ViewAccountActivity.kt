@@ -48,7 +48,10 @@ class ViewAccountActivity : AppCompatActivity() {
         webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
             try {
                 val request = DownloadManager.Request(Uri.parse(url))
-                request.addRequestHeader("Cookie", cookieManager.getCookie(url))
+                val cookie = cookieManager.getCookie(url)
+                if (!cookie.isNullOrBlank()) {
+                    request.addRequestHeader("Cookie", cookie)
+                }
                 request.addRequestHeader("User-Agent", userAgent)
                 request.setMimeType(mimeType)
                 val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
@@ -58,7 +61,9 @@ class ViewAccountActivity : AppCompatActivity() {
                 manager.enqueue(request)
                 Toast.makeText(this, "Descargando…", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "No se pudo descargar el archivo.", Toast.LENGTH_LONG).show()
+                // Mensaje con el error real, temporalmente, para saber qué
+                // está fallando en vez de adivinar.
+                Toast.makeText(this, "Error al descargar: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
 

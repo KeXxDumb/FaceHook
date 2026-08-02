@@ -95,39 +95,41 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Corre el mismo chequeo que hace WorkManager cada ~15 min, pero al
-    // toque, para poder probar que las notificaciones sí llegan sin
-    // esperar al ciclo automático. Si ya viste todo lo que había antes de
-    // este chequeo, no vas a ver notificación (nada subió). Para probar
-    // de verdad: pide a alguien que te mande un mensaje o solicitud, NO
-    // abras esa cuenta en la app (para no marcarlo como leído), y luego
-    // toca "Revisar ahora".
+    // Muestra, cuenta por cuenta, los contadores reales que se lograron
+    // leer de Facebook (o el error exacto si algo falló). Esto reemplaza
+    // temporalmente el resumen simple para poder diagnosticar qué está
+    // fallando de verdad.
     private fun checkNow() {
         val button = findViewById<TextView>(R.id.checkNowButton)
         button.text = getString(R.string.checking)
         button.isEnabled = false
 
         CoroutineScope(Dispatchers.Main).launch {
-            val result = withContext(Dispatchers.IO) {
-                try {
-                    Result.success(pollAllProfiles(applicationContext, seed = false))
-                } catch (e: Exception) {
-                    Result.failure(e)
-                }
+            val results = withContext(Dispatchers.IO) {
+                pollAllProfilesDebug(applicationContext)
             }
             button.isEnabled = true
             button.text = getString(R.string.check_now_button)
 
-            result.onSuccess { fired ->
-                val message = if (fired > 0) {
-                    getString(R.string.check_done_new, fired)
-                } else {
-                    getString(R.string.check_done_none)
-                }
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
-            }.onFailure {
-                Toast.makeText(this@MainActivity, getString(R.string.check_done_error), Toast.LENGTH_LONG).show()
+            if (results.isEmpty()) {
+                Toast.makeText(this@MainActivity, "No hay cuentas guardadas.", Toast.LENGTH_LONG).show()
+                return@launch
             }
+
+            val report = results.joinToString("\n\n") { (label, result) ->
+                result.fold(
+                    onSuccess = { counts ->
+                        "$label:\n" + counts.entries.joinToString("\n") { "  ${it.key}: ${it.value}" }
+                    },
+                    onFailure = { e -> "$label:\n  ERROR: ${e.message}" },
+                )
+            }
+
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Diagnóstico")
+                .setMessage(report)
+                .setPositiveButton("OK", null)
+                .show()
         }
     }
 }

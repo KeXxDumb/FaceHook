@@ -55,6 +55,24 @@ fun schedulePeriodicPolling(context: Context) {
 
 // Revisa todas las cuentas guardadas. seed=true solo guarda el estado
 // actual sin notificar (se usa al agregar una cuenta nueva).
+// Versión de diagnóstico: en vez de solo notificar, devuelve los contadores
+// reales que se lograron leer de cada perfil (o el error si falló), para
+// poder ver qué está pasando de verdad en vez de adivinar.
+fun pollAllProfilesDebug(context: Context): List<Pair<String, Result<Map<String, Int>>>> {
+    return ProfileStore.list(context).map { profile ->
+        val result = try {
+            if (!FacebookPoller.hasAuthCookie(profile.cookieString)) {
+                Result.failure(Exception("Sin cookie de sesión válida (c_user)"))
+            } else {
+                Result.success(FacebookPoller.fetchCounts(profile.cookieString))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+        profile.label to result
+    }
+}
+
 fun pollAllProfiles(context: Context, seed: Boolean): Int {
     var fired = 0
     ProfileStore.list(context).forEach { profile ->

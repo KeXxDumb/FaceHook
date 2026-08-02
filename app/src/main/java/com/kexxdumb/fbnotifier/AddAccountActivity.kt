@@ -75,6 +75,10 @@ class AddAccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.savingOverlay).visibility = View.VISIBLE
 
         webView.evaluateJavascript("(function(){return document.title;})();") { rawTitle ->
+            // Diagnóstico temporal: para saber qué está devolviendo
+            // realmente la página en tu cuenta.
+            Toast.makeText(this, "Título capturado: $rawTitle", Toast.LENGTH_LONG).show()
+
             val title = rawTitle?.trim('"')
                 ?.replace("\\\"", "\"")
                 ?.removeSuffix(" | Facebook")
