@@ -14,10 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val LOGIN_URL = "https://m.facebook.com/login"
-private const val ME_URL = "https://m.facebook.com/me"
 private const val FB_URL = "https://m.facebook.com"
 
-private enum class Phase { LOGGING_IN, LOADING_PROFILE, DONE }
+private enum class Phase { LOGGING_IN, DONE }
 
 class AddAccountActivity : AppCompatActivity() {
 
@@ -39,7 +38,6 @@ class AddAccountActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 when (phase) {
                     Phase.LOGGING_IN -> checkLoginCompleted()
-                    Phase.LOADING_PROFILE -> readDisplayName()
                     Phase.DONE -> {}
                 }
             }
@@ -62,29 +60,54 @@ class AddAccountActivity : AppCompatActivity() {
         val cookieString = CookieManager.getInstance().getCookie(FB_URL) ?: return
         if (!FacebookPoller.hasAuthCookie(cookieString)) return
 
-        phase = Phase.LOADING_PROFILE
-        // Navega el MISMO WebView (misma sesión ya autenticada) a la
-        // página de perfil, en vez de hacer una petición HTTP aparte —
-        // así se evita que falte algún cookie/token que Facebook exige
-        // y que antes causaba que no detectara el nombre real.
-        webView.loadUrl(ME_URL)
+        phase = Phase.DONE
+        // No navegamos a ninguna otra página (m.facebook.com/me causaba un
+        // aviso de "enlace inválido" de Facebook, justo al hacerlo). Se lee
+        // el nombre de la MISMA página donde ya aterrizaste tras el login.
+        readDisplayName()
     }
 
     private fun readDisplayName() {
         phase = Phase.DONE
         findViewById<View>(R.id.savingOverlay).visibility = View.VISIBLE
 
-        webView.evaluateJavascript("(function(){return document.title;})();") { rawTitle ->
-            // Diagnóstico temporal: para saber qué está devolviendo
-            // realmente la página en tu cuenta.
-            Toast.makeText(this, "Título capturado: $rawTitle", Toast.LENGTH_LONG).show()
+        val script = """
+            (function() {
+                var og = document.querySelector('meta[property="og:title"]');
+                return JSON.stringify({
+                    title: document.title,
+                    ogTitle: og ? og.getAttribute('content') : null
+                });
+            })();
+        """.trimIndent()
 
-            val title = rawTitle?.trim('"')
-                ?.replace("\\\"", "\"")
-                ?.removeSuffix(" | Facebook")
-                ?.removeSuffix(" - Facebook")
-                ?.trim()
-            saveAccount(title?.takeIf { it.isNotBlank() && it != "null" })
+        webView.evaluateJavascript(script) { rawJson ->
+            var name: String? = null
+            try {
+                val unescaped = rawJson?.trim('"')
+                    ?.replace("\\\"", "\"")
+                    ?.replace("\\\\", "\\")
+                val obj = org.json.JSONObject(unescaped ?: "{}")
+                val ogTitle = obj.optString("ogTitle", "").trim()
+                val title = obj.optString("title", "").trim()
+
+                // Diagnóstico temporal, para saber qué está devolviendo
+                // realmente la página en tu cuenta.
+                Toast.makeText(
+                    this,
+                    "title: \"$title\" · og:title: \"$ogTitle\"",
+                    Toast.LENGTH_LONG,
+                ).show()
+
+                name = ogTitle.ifBlank { title }
+                    .removeSuffix(" | Facebook")
+                    .removeSuffix(" - Facebook")
+                    .trim()
+                    .takeIf { it.isNotBlank() && it != "null" && it != "Facebook" }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error leyendo el nombre: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+            saveAccount(name)
         }
     }
 

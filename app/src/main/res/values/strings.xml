@@ -9,7 +9,7 @@
     <string name="check_done_error">Error al revisar (¿sin red?)</string>
     <string name="accounts_title">Cuentas de Facebook</string>
     <string name="empty_accounts">Aún no agregas ninguna cuenta.</string>
-    <string name="long_press_hint">mantén presionado para quitar</string>
+    <string name="long_press_hint">mantén presionado para más opciones</string>
     <string name="session_detected">Sesión detectada</string>
     <string name="name_prompt">¿Cómo quieres llamar a esta cuenta?</string>
     <string name="name_hint">Ej. Personal, Trabajo, Tienda…</string>

@@ -53,6 +53,12 @@ object ProfileStore {
         return profile
     }
 
+    fun rename(context: Context, id: String, newLabel: String) {
+        val trimmed = newLabel.trim()
+        if (trimmed.isEmpty()) return
+        save(context, list(context).map { if (it.id == id) it.copy(label = trimmed) else it })
+    }
+
     fun remove(context: Context, id: String) {
         save(context, list(context).filterNot { it.id == id })
         prefs(context).edit()

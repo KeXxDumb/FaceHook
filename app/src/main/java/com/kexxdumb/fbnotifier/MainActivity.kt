@@ -85,6 +85,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun confirmRemove(profile: FacebookProfile) {
         AlertDialog.Builder(this)
+            .setTitle(profile.label)
+            .setItems(arrayOf("Renombrar", "Quitar cuenta")) { _, which ->
+                when (which) {
+                    0 -> showRenameDialog(profile)
+                    1 -> showRemoveConfirm(profile)
+                }
+            }
+            .show()
+    }
+
+    private fun showRenameDialog(profile: FacebookProfile) {
+        val input = android.widget.EditText(this)
+        input.setText(profile.label)
+        AlertDialog.Builder(this)
+            .setTitle("Renombrar cuenta")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Guardar") { _, _ ->
+                ProfileStore.rename(this, profile.id, input.text.toString())
+                renderProfiles()
+            }
+            .show()
+    }
+
+    private fun showRemoveConfirm(profile: FacebookProfile) {
+        AlertDialog.Builder(this)
             .setTitle("Quitar cuenta")
             .setMessage("¿Quitar \"${profile.label}\" de las notificaciones?")
             .setNegativeButton("Cancelar", null)

@@ -25,7 +25,7 @@ object FacebookPoller {
         CATEGORY_NOTIFICATIONS to "Notificaciones",
     )
 
-    private const val BOOKMARKS_URL = "https://m.facebook.com/menu/bookmarks/"
+    private const val BOOKMARKS_URL = "https://m.facebook.com/"
     private const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
 
@@ -79,10 +79,15 @@ object FacebookPoller {
         val conn = URL(BOOKMARKS_URL).openConnection() as HttpURLConnection
         conn.setRequestProperty("Cookie", cookieString)
         conn.setRequestProperty("User-Agent", USER_AGENT)
+        conn.setRequestProperty("Accept", "text/html,application/xhtml+xml")
+        conn.setRequestProperty("Accept-Language", "es-ES,es;q=0.9")
         conn.connectTimeout = 15000
         conn.readTimeout = 15000
         try {
-            if (conn.responseCode !in 200..299) throw RuntimeException("HTTP ${conn.responseCode}")
+            if (conn.responseCode !in 200..299) {
+                val errorBody = conn.errorStream?.bufferedReader()?.use { it.readText() }?.take(300)
+                throw RuntimeException("HTTP ${conn.responseCode}${if (errorBody != null) " — $errorBody" else ""}")
+            }
             val html = conn.inputStream.bufferedReader().use { it.readText() }
             return parseCounts(html)
         } finally {

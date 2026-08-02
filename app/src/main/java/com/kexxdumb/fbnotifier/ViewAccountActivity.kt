@@ -42,28 +42,19 @@ class ViewAccountActivity : AppCompatActivity() {
             }
         }
 
+        webView.addJavascriptInterface(WebFileBridge(this), "AndroidDownloader")
+
         // Sin esto, tocar "Guardar imagen"/descargar un archivo dentro del
-        // WebView no hace nada — hay que decirle explícitamente al sistema
-        // qué hacer con esa descarga.
+        // WebView no hace nada. Facebook usa dos mecanismos distintos:
+        // URLs normales (http/https) → DownloadManager las maneja bien.
+        // blob: (datos generados en memoria por la página, ej. fotos) →
+        // DownloadManager NO puede tocarlos; hay que leerlos con JS dentro
+        // de la página y pasarlos a Kotlin como base64.
         webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-            try {
-                val request = DownloadManager.Request(Uri.parse(url))
-                val cookie = cookieManager.getCookie(url)
-                if (!cookie.isNullOrBlank()) {
-                    request.addRequestHeader("Cookie", cookie)
-                }
-                request.addRequestHeader("User-Agent", userAgent)
-                request.setMimeType(mimeType)
-                val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-                manager.enqueue(request)
-                Toast.makeText(this, "Descargando…", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                // Mensaje con el error real, temporalmente, para saber qué
-                // está fallando en vez de adivinar.
-                Toast.makeText(this, "Error al descargar: ${e.message}", Toast.LENGTH_LONG).show()
+            if (url.startsWith("blob:")) {
+                downloadBlobUrl(webView, url, contentDisposition, mimeType)
+            } else {
+                downloadHttpUrl(cookieManager, url, userAgent, contentDisposition, mimeType)
             }
         }
 
@@ -84,6 +75,61 @@ class ViewAccountActivity : AppCompatActivity() {
             webView.goBack()
         } else {
             super.onBackPressed()
+        }
+    }
+
+    private fun downloadBlobUrl(webView: WebView, blobUrl: String, contentDisposition: String?, mimeType: String) {
+        val guessedName = URLUtil.guessFileName(blobUrl, contentDisposition, mimeType)
+        val extension = mimeType.substringAfterLast('/', "jpg")
+        val filename = if (guessedName.contains('.')) guessedName else "facehook_$guessedName.$extension"
+
+        // Lee el blob DESDE la propia página (ahí sí existe) y lo pasa a
+        // Kotlin como base64 a través del puente AndroidDownloader.
+        val script = """
+            (function() {
+                fetch(${jsString(blobUrl)})
+                    .then(function(res) { return res.blob(); })
+                    .then(function(blob) {
+                        var reader = new FileReader();
+                        reader.onloadend = function() {
+                            var base64 = reader.result.split(',')[1];
+                            AndroidDownloader.saveBase64File(base64, ${jsString(filename)}, ${jsString(mimeType)});
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(function(e) { AndroidDownloader.reportError(e.toString()); });
+            })();
+        """.trimIndent()
+
+        webView.evaluateJavascript(script, null)
+        Toast.makeText(this, "Descargando…", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun jsString(value: String) = org.json.JSONObject.quote(value)
+
+    private fun downloadHttpUrl(
+        cookieManager: CookieManager,
+        url: String,
+        userAgent: String,
+        contentDisposition: String?,
+        mimeType: String,
+    ) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url))
+            val cookie = cookieManager.getCookie(url)
+            if (!cookie.isNullOrBlank()) {
+                request.addRequestHeader("Cookie", cookie)
+            }
+            request.addRequestHeader("User-Agent", userAgent)
+            request.setMimeType(mimeType)
+            val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            manager.enqueue(request)
+            Toast.makeText(this, "Descargando…", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al descargar: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 }
