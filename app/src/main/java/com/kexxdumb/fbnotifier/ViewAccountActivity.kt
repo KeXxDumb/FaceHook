@@ -1,9 +1,14 @@
 package com.kexxdumb.fbnotifier
 
 import android.annotation.SuppressLint
+import android.app.DownloadManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.webkit.CookieManager
+import android.webkit.URLUtil
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
@@ -30,19 +35,42 @@ class ViewAccountActivity : AppCompatActivity() {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
 
-        // Limpia cualquier sesión anterior (de otra cuenta que hayas visto
-        // antes) de forma síncrona antes de cargar, e inyecta las cookies
-        // guardadas de esta cuenta específica.
-        cookieManager.removeAllCookies { _ ->
-            profile.cookieString.split(";").forEach { pair ->
-                val trimmed = pair.trim()
-                if (trimmed.isNotEmpty()) {
-                    cookieManager.setCookie(FB_URL, trimmed)
-                }
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                view.evaluateJavascript(CleanupScript.JS, null)
             }
-            cookieManager.flush()
-            webView.loadUrl(FB_URL)
         }
+
+        // Sin esto, tocar "Guardar imagen"/descargar un archivo dentro del
+        // WebView no hace nada — hay que decirle explícitamente al sistema
+        // qué hacer con esa descarga.
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            try {
+                val request = DownloadManager.Request(Uri.parse(url))
+                request.addRequestHeader("Cookie", cookieManager.getCookie(url))
+                request.addRequestHeader("User-Agent", userAgent)
+                request.setMimeType(mimeType)
+                val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+                manager.enqueue(request)
+                Toast.makeText(this, "Descargando…", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "No se pudo descargar el archivo.", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        cookieManager.removeAllCookies(null)
+        profile.cookieString.split(";").forEach { pair ->
+            val trimmed = pair.trim()
+            if (trimmed.isNotEmpty()) {
+                cookieManager.setCookie(FB_URL, trimmed)
+            }
+        }
+        cookieManager.flush()
+        webView.loadUrl(FB_URL)
     }
 
     override fun onBackPressed() {

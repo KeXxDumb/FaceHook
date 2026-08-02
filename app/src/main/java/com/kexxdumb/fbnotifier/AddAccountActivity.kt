@@ -45,21 +45,14 @@ class AddAccountActivity : AppCompatActivity() {
             }
         }
 
-        // Limpia cookies/cache de una sesión anterior (de otra cuenta que
-        // hayas agregado antes) de forma SÍNCRONA vía el callback — si se
-        // carga el login antes de que esto termine, quedan cookies viejas
-        // mezcladas y Facebook responde "credenciales incorrectas" aunque
-        // sean correctas.
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
         webView.clearCache(true)
         webView.clearHistory()
         webView.clearFormData()
-        cookieManager.removeAllCookies { _ ->
-            cookieManager.flush()
-            webView.loadUrl(LOGIN_URL)
-        }
+        cookieManager.removeAllCookies(null)
+        webView.loadUrl(LOGIN_URL)
     }
 
     // Solo acepta el login cuando la cookie real de sesión (c_user) está
